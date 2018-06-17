@@ -18,19 +18,27 @@ import sys
 import numpy as np
 import time
 import serial
+import serial.tools.list_ports
 
 
-class ExampleApp(QtGui.QMainWindow, PlotDataGUI.Ui_MainWindow):
+class PlottingApp(QtGui.QMainWindow, PlotDataGUI.Ui_MainWindow):
     """Define class which handles all GUI interaction"""
     # Define class specific, shared variables
     firstRunFlag = True
     runningFlag = False
     updateTimer = QtCore.QTimer()
-    arduinoInput = serial.Serial('COM9', 9600, timeout=5)
+
     dataArray = np.zeros(1)
     currentMaxVolts = 0
     stationaryBeforeScroll = 500
     scrollingFlag = False
+
+    # Look for open COM ports
+    availablePorts = serial.tools.list_ports.comports()
+    nPorts = len(availablePorts)
+    arduinoPort = availablePorts[-1].device
+
+    
 
 #------------------------------------------------------------------------------    
     def __init__(self, parent=None):
@@ -38,7 +46,7 @@ class ExampleApp(QtGui.QMainWindow, PlotDataGUI.Ui_MainWindow):
         # Change pyqtgraph to have white backgound
         pg.setConfigOption('background', 'w')
         # Call constructor in GUI script as chile
-        super(ExampleApp, self).__init__(parent)
+        super(PlottingApp, self).__init__(parent)
 
         # Setup the GUI
         self.setupUi(self)
@@ -78,7 +86,13 @@ class ExampleApp(QtGui.QMainWindow, PlotDataGUI.Ui_MainWindow):
         self.maxVoltsOut.insert("0.00")
         
         # Define an message box to open when about/information in menu bar is selected
-        # self.actionInformation.triggered.connect(self.AboutMessage)
+        self.actionAbout.triggered.connect(self.AboutMessage)
+
+        # Define a message box for help
+        self.actionHelp.triggered.connect(self.HelpMessages)
+
+        # Define a dialog box to select the appropriate COM Port
+        self.actionSelectCOMPort.triggered.connect(self.dialogSelectPort)
 
 #        self.actionExit_App.triggered.connect(QtWidgets.QApplication.quit())
 
@@ -86,11 +100,23 @@ class ExampleApp(QtGui.QMainWindow, PlotDataGUI.Ui_MainWindow):
 #------------------------------------------------------------------------------
     def InitializeRun(self):
         """Define write data to file"""
-        print('DataCollection Class activated') #Print Debug Note
-        self.statusbar.showMessage('Executing First Run Tasks')
         # Things to be completed during the first activation    
         if self.firstRunFlag == True:
-            print('First Run Activated')    # Debug Notice
+            # Check the comport for functional arduino
+            self.statusbar.showMessage("Checking COM port for arduino...")
+            # Connect to com port specified by user. Reads one peice of data to make sure
+            # it works. If not, will return error message without stopping program.
+            try:
+                self.arduinoInput = serial.Serial(self.arduinoPort, 9600, timeout=5)
+                # Read from serial port. This is encoded in bytes
+                dataIn = self.arduinoInput.readline()
+                # Decode the byte
+                dataIn = float(dataIn[0:len(dataIn)-2].decode("utf-8"))
+            except:
+                # If there is an exception, return without starting collection
+                self.statusbar.showMessage("Connection Failed. Check Port and Arduino.")
+                return()
+            
             self.statusbar.showMessage('Executing First Run Tasks') # Insitu debug
 
             # Change the first run flag to false
@@ -108,7 +134,6 @@ class ExampleApp(QtGui.QMainWindow, PlotDataGUI.Ui_MainWindow):
  
         else:
             # Debug message
-            print('Not First Run\n')
             return()
 
         
@@ -119,7 +144,7 @@ class ExampleApp(QtGui.QMainWindow, PlotDataGUI.Ui_MainWindow):
             self.runningFlag = False
             self.updateTimer.stop()
             self.stopPlotting.setEnabled(False)
-            print('STOP STOP STOP STOP\n')
+
             self.statusbar.showMessage('Plotting Stopped. Waiting Reset')
         else:
             return()
@@ -146,7 +171,7 @@ class ExampleApp(QtGui.QMainWindow, PlotDataGUI.Ui_MainWindow):
             self.voltageCurve.setData(self.dataArray)
             self.statusbar.showMessage("Ready for data")
 
-            self.arduinoInput.flush()
+            self.arduinoInput.close()
         else:
             self.statusbar("Unable to reset at this time")
             return()
@@ -174,18 +199,58 @@ class ExampleApp(QtGui.QMainWindow, PlotDataGUI.Ui_MainWindow):
                 self.maxVoltsLine.setValue(self.currentMaxVolts)
                     
         else:
-            print('Not Recording\n')        
+            self.statusbar.showMessage('Not Recording')        
         
 #------------------------------------------------------------------------------         
     def AboutMessage(self):
         """ Method to create message box which displays "about" information"""
         self.statusbar.showMessage('About Information selected')
         msgbox = QtWidgets.QMessageBox()
-        msgbox.setText('Curlsmart Data Aquistion System\n'\
-                       'Developed by D. Hartlen\n'\
-                       'All rights reserved')
+        msgbox.setWindowTitle('About')
+        msgbox.setText('Wind Energy Demonstration\n'\
+                       'Data Collection and Plotting\n'\
+                       'Developed by D.C. Hartlen, 2018\n'\
+                       'Distributed under MIT License\n\n'\
+                       'Qt used in GUI development.\n'\
+                       'Qt distrubited under GNU LPGL')
         msgbox.exec()
-        
+
+#------------------------------------------------------------------------------         
+    def HelpMessages(self):
+        """ Method to create message box which provides instructions"""
+        self.statusbar.showMessage('Help selected')
+        msgbox = QtWidgets.QMessageBox()
+        msgbox.setWindowTitle('Help')
+        msgbox.setText('Operation:\n'\
+                       '1) System attempts to select available COM Port as this is\n'\
+                       '   typically where the arduino is located. To manually\n'\
+                       '   specify the COM port, go to file and select select \n'\
+                       '   "Select COM Port". Choose the appropriate port and OK.\n'\
+                       '2) Press Start to start collecting and and plotting data.\n'\
+                       '3) press Stop to stop plotting. Does not reset plotted data.\n'\
+                       '4) Press Reset to clear plotted dataand prepare for next run.')
+        msgbox.exec()
+#------------------------------------------------------------------------------         
+    def dialogSelectPort(self):
+        """ Method creates a dialog box for the selection of avaiable com ports"""
+        #Initalize an empty list of comports
+        items = [None] * self.nPorts
+        # Populate list
+        for i in range(self.nPorts):
+            items[i] = self.availablePorts[i].device
+        # Create a dialog instance
+        selectedPort, okPressed = QtWidgets.QInputDialog.getItem(self,
+                                               "Select COM Port", 
+                                               "Select COM Port:",
+                                               items,
+                                               0,
+                                               False)
+        # If an item from the list is selected and ok is  pressed, return
+        # the comport name and exit the menu.
+        if okPressed and selectedPort:
+            self.statusbar.showMessage(selectedPort)
+            self.arduinoPort = selectedPort
+             
         
 #------------------------------------------------------------------------------ 
 # This conditional executes the loop
@@ -195,10 +260,9 @@ if __name__=="__main__":
     # Set style of app to 'CleanLooks'
     style = app.setStyle('CleanLooks')
     # Set the layout and behavour of the app by linking it to class generated above
-    form = ExampleApp()
+    form = PlottingApp()
     # Start the app
     form.show()
     form.update() #start with something
     sys.exit(app.exec_())
     # Print debug on exit
-    print("DONE")
