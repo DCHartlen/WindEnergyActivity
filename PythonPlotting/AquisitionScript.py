@@ -26,24 +26,25 @@ class PlottingApp(QtGui.QMainWindow, PlotDataGUI.Ui_MainWindow):
     # Define class specific, shared variables
     firstRunFlag = True
     runningFlag = False
+    # Qt specific input to allor for updating
     updateTimer = QtCore.QTimer()
 
-    dataArray = np.zeros(1)
-    currentMaxVolts = 0
-    stationaryBeforeScroll = 500
-    scrollingFlag = False
-    iTicker = 0
+    dataArray = np.zeros(1)     # Input data array
+    currentMaxVolts = 0         # Tracks max voltage
+    stationaryBeforeScroll = 500    # Number of data points visable on screen
+    iTicker = 0     # Iteration counter. Used to fill array before scrolling starts
 
-    # Look for open COM ports
+    # Set a default com port (the last one). Adjustable via dialog box
     availablePorts = serial.tools.list_ports.comports()
     nPorts = len(availablePorts)
     arduinoPort = availablePorts[-1].device
 
-    
+    # Low pass filter coef. Adjustable via dialog box
+    beta = 0.150
 
 #------------------------------------------------------------------------------    
     def __init__(self, parent=None):
-        """Define Constructor"""
+        """Acquisition constructor. Used to define buttons and setup plot"""
         # Change pyqtgraph to have white backgound
         pg.setConfigOption('background', 'w')
         # Call constructor in GUI script as chile
@@ -56,16 +57,13 @@ class PlottingApp(QtGui.QMainWindow, PlotDataGUI.Ui_MainWindow):
         self.mainPlotWindow.plotItem.showGrid(True, True, 0.7)
         self.mainPlotWindow.setRange(xRange=[0, self.stationaryBeforeScroll], yRange=[0,1.5])  
         self.mainPlotWindow.setLabels(left = 'Voltage (V)',bottom = 'Time')
-        self.mainPlotWindow.setAutoPan(x=True)
-        self.mainPlotWindow.setAutoVisible(x=True,y=True)
-        # self.mainPlotWindow.setLimits(xMin=0,xMax=200,yMin=0,yMax=1.5)
 
         # Define a maximum voltage reached line
         self.maxVoltsLine = pg.InfiniteLine(angle=0)
         self.maxVoltsLine.setPen(color="FFA500", width=2)
         self.mainPlotWindow.addItem(self.maxVoltsLine)
 
-        # Define the voltage curve to be plotted
+        # Define the voltage curve to be plotted (in front of max voltage)
         self.voltageCurve = self.mainPlotWindow.plot()
         self.voltageCurve.setPen('b',width=2)
 
@@ -84,7 +82,7 @@ class PlottingApp(QtGui.QMainWindow, PlotDataGUI.Ui_MainWindow):
         # Define a timer object to run method Update Ticker every timeout
         self.updateTimer.timeout.connect(self.UpdatePlot)
 
-        # Update the max voltage 
+        # Initialize the max voltage 
         self.maxVoltsOut.insert("%0.3f" % self.currentMaxVolts)
         
         # Define an message box to open when about/information in menu bar is selected
@@ -96,8 +94,8 @@ class PlottingApp(QtGui.QMainWindow, PlotDataGUI.Ui_MainWindow):
         # Define a dialog box to select the appropriate COM Port
         self.actionSelectCOMPort.triggered.connect(self.dialogSelectPort)
 
-#        self.actionExit_App.triggered.connect(QtWidgets.QApplication.quit())
-
+        # Define a dialog box to change filter parameters
+        self.actionSetFilterCoef.triggered.connect(self.dialogFilterParams)
 
 #------------------------------------------------------------------------------
     def InitializeRun(self):
@@ -137,7 +135,6 @@ class PlottingApp(QtGui.QMainWindow, PlotDataGUI.Ui_MainWindow):
         else:
             # Debug message
             return()
-
         
 #------------------------------------------------------------------------------             
     def StopTicker(self):
@@ -147,13 +144,16 @@ class PlottingApp(QtGui.QMainWindow, PlotDataGUI.Ui_MainWindow):
             self.updateTimer.stop()
             self.stopPlotting.setEnabled(False)
 
-            self.statusbar.showMessage('Plotting Stopped. Waiting Reset')
+            # close com port to arduino
+            self.arduinoInput.close()
+
+            self.statusbar.showMessage('Plotting Stopped. Awaiting Reset')
         else:
             return()
 
 #------------------------------------------------------------------------------             
     def resetUI(self):
-        """ Reinitalizes the GUI for the next run """
+        """ Reset the GUI for the next run """
         if self.runningFlag == False & self.firstRunFlag == False:
             # Enable both buttons
             self.stopPlotting.setEnabled(True)
@@ -165,15 +165,15 @@ class PlottingApp(QtGui.QMainWindow, PlotDataGUI.Ui_MainWindow):
             # Reset data array and max volt tracker to zero
             self.dataArray = np.zeros(1)
             self.currentMaxVolts = 0
+            self.iTicker = 0
 
             # Reset dialog box and plot
             self.maxVoltsOut.clear()
             self.maxVoltsOut.insert("%0.3f" % self.currentMaxVolts)
             self.maxVoltsLine.setValue(self.currentMaxVolts)
             self.voltageCurve.setData(self.dataArray)
-            self.statusbar.showMessage("Ready for go!")
+            self.statusbar.showMessage("Ready to go!")
 
-            self.arduinoInput.close()
         else:
             self.statusbar("Unable to reset at this time")
             return()
@@ -184,14 +184,18 @@ class PlottingApp(QtGui.QMainWindow, PlotDataGUI.Ui_MainWindow):
         if self.runningFlag == True:
             # Read from serial port. This is encoded in bytes
             dataIn = self.arduinoInput.readline()
+
             # Decode the byte
             dataIn = float(dataIn[0:len(dataIn)-2].decode("utf-8"))
+
+            # Filter input data
+            filteredIn = (1-self.beta)*self.dataArray[-1] + self.beta*dataIn
 
             # If the number of data points is less than the size of the screen,
             # accumulate data
             if self.iTicker < self.stationaryBeforeScroll:
                 # append new data to existing data array
-                self.dataArray = np.append(self.dataArray,dataIn)
+                self.dataArray = np.append(self.dataArray,filteredIn)
 
                 self.iTicker += 1
             # Start scrolling data otherwise.
@@ -199,16 +203,17 @@ class PlottingApp(QtGui.QMainWindow, PlotDataGUI.Ui_MainWindow):
                 # slice data array such that all data is rolled back one index
                 self.dataArray[:-1] = self.dataArray[1:]
                 # Overwrite last value in array
-                self.dataArray[-1] = dataIn
+                self.dataArray[-1] = filteredIn
 
             # Print the current input to the status bar
-            self.statusbar.showMessage("Running: V = %0.3f V" % dataIn)
-            # Update the data in the curve related to motor voltage
+            self.statusbar.showMessage("Running: V = %0.3f V" % filteredIn)
+
+            # Update the plot for animation
             self.voltageCurve.setData(self.dataArray)
 
-            # if new voltage is large than maximum voltage, replace max
-            if dataIn > self.currentMaxVolts:
-                self.currentMaxVolts = dataIn
+            # if new voltage is large than maximum voltage, replace max and print to screen
+            if filteredIn > self.currentMaxVolts:
+                self.currentMaxVolts = filteredIn
                 self.maxVoltsOut.clear()
                 self.maxVoltsOut.insert("%0.3f" % self.currentMaxVolts)
                 self.maxVoltsLine.setValue(self.currentMaxVolts)
@@ -265,7 +270,18 @@ class PlottingApp(QtGui.QMainWindow, PlotDataGUI.Ui_MainWindow):
         if okPressed and selectedPort:
             self.statusbar.showMessage(selectedPort)
             self.arduinoPort = selectedPort
-             
+
+#------------------------------------------------------------------------------         
+    def dialogFilterParams(self):
+        """ Method creates a dialog box to set filter parameters """
+        # Create a dialog instance
+        newParam, okPressed = QtWidgets.QInputDialog.getDouble(self, 
+        "Set Filter Parameters","Beta (0<beta<1):", self.beta, 0, 1, 3)
+        # If an item from the list is selected and ok is  pressed, return
+        # the comport name and exit the menu.
+        if okPressed:
+            self.statusbar.showMessage("New filter coefficient: Beta = %0.3f" % newParam)
+            self.beta = newParam
         
 #------------------------------------------------------------------------------ 
 # This conditional executes the loop

@@ -203,6 +203,7 @@
      <string>Options</string>
     </property>
     <addaction name="actionSelectCOMPort"/>
+    <addaction name="actionSetFilterCoef"/>
    </widget>
    <addaction name="menuOptions"/>
    <addaction name="menuAbout"/>
@@ -240,6 +241,11 @@
   <action name="actionSelectCOMPort">
    <property name="text">
     <string>Select COM Port</string>
+   </property>
+  </action>
+  <action name="actionSetFilterCoef">
+   <property name="text">
+    <string>Set Filter Parameters</string>
    </property>
   </action>
  </widget>

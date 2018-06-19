@@ -103,9 +103,12 @@ class Ui_MainWindow(object):
         self.actionTest_2.setObjectName("actionTest_2")
         self.actionSelectCOMPort = QtWidgets.QAction(MainWindow)
         self.actionSelectCOMPort.setObjectName("actionSelectCOMPort")
+        self.actionSetFilterCoef = QtWidgets.QAction(MainWindow)
+        self.actionSetFilterCoef.setObjectName("actionSetFilterCoef")
         self.menuAbout.addAction(self.actionHelp)
         self.menuAbout.addAction(self.actionAbout)
         self.menuOptions.addAction(self.actionSelectCOMPort)
+        self.menuOptions.addAction(self.actionSetFilterCoef)
         self.menuBar.addAction(self.menuOptions.menuAction())
         self.menuBar.addAction(self.menuAbout.menuAction())
 
@@ -128,5 +131,6 @@ class Ui_MainWindow(object):
         self.actionTest.setText(_translate("MainWindow", "test"))
         self.actionTest_2.setText(_translate("MainWindow", "test"))
         self.actionSelectCOMPort.setText(_translate("MainWindow", "Select COM Port"))
+        self.actionSetFilterCoef.setText(_translate("MainWindow", "Set Filter Parameters"))
 
 from pyqtgraph import PlotWidget

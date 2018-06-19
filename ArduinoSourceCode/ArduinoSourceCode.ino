@@ -73,7 +73,7 @@ void loop() {
     vNew = analogRead(pinGenerator);
     // Two things here. 1) running first order low pass filter on raw 
     // input (in bits), 2) converting bits to volts.
-    vAct = (alpha*float(vOld) + (1.0-alpha)*float(vNew))*b2v;
+    vAct = vNew*b2v;
     //Saving old voltage for next iteration (in bits)
     vOld = vNew;
     // print the actual voltage to serial
