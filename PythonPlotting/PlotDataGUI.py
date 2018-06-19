@@ -54,7 +54,7 @@ class Ui_MainWindow(object):
         font.setBold(False)
         font.setWeight(50)
         self.maxVoltsOut.setFont(font)
-        self.maxVoltsOut.setAlignment(QtCore.Qt.AlignLeading|QtCore.Qt.AlignLeft|QtCore.Qt.AlignVCenter)
+        self.maxVoltsOut.setAlignment(QtCore.Qt.AlignCenter)
         self.maxVoltsOut.setObjectName("maxVoltsOut")
         self.verticalLayout.addWidget(self.maxVoltsOut)
         spacerItem1 = QtWidgets.QSpacerItem(17, 357, QtWidgets.QSizePolicy.Minimum, QtWidgets.QSizePolicy.Expanding)
@@ -114,8 +114,8 @@ class Ui_MainWindow(object):
 
     def retranslateUi(self, MainWindow):
         _translate = QtCore.QCoreApplication.translate
-        MainWindow.setWindowTitle(_translate("MainWindow", "Plot Wind Turbine Output"))
-        self.label.setText(_translate("MainWindow", "<html><head/><body><p align=\"center\"><span style=\" font-size:14pt; font-weight:600;\">Maximum Voltage</span></p></body></html>"))
+        MainWindow.setWindowTitle(_translate("MainWindow", "Wind Energy Demonstration Plotter"))
+        self.label.setText(_translate("MainWindow", "<html><head/><body><p align=\"center\"><span style=\" font-size:14pt; font-weight:600;\">Peak Voltage (V)</span></p></body></html>"))
         self.startPlotting.setText(_translate("MainWindow", "Start"))
         self.stopPlotting.setText(_translate("MainWindow", "Stop"))
         self.resetPlots.setText(_translate("MainWindow", "Reset"))

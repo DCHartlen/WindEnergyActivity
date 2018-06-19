@@ -32,6 +32,7 @@ class PlottingApp(QtGui.QMainWindow, PlotDataGUI.Ui_MainWindow):
     currentMaxVolts = 0
     stationaryBeforeScroll = 500
     scrollingFlag = False
+    iTicker = 0
 
     # Look for open COM ports
     availablePorts = serial.tools.list_ports.comports()
@@ -53,22 +54,23 @@ class PlottingApp(QtGui.QMainWindow, PlotDataGUI.Ui_MainWindow):
 
         # Define information about the plot window specifically
         self.mainPlotWindow.plotItem.showGrid(True, True, 0.7)
-        # self.mainPlotWindow.setRange(xRange=[0, self.stationaryBeforeScroll])  
-        self.mainPlotWindow.setLabels(left = 'Amplitude',bottom = 'Timestep')
-        # self.mainPlotWindow.setAutoPan(x=True)
+        self.mainPlotWindow.setRange(xRange=[0, self.stationaryBeforeScroll], yRange=[0,1.5])  
+        self.mainPlotWindow.setLabels(left = 'Voltage (V)',bottom = 'Time')
+        self.mainPlotWindow.setAutoPan(x=True)
+        self.mainPlotWindow.setAutoVisible(x=True,y=True)
         # self.mainPlotWindow.setLimits(xMin=0,xMax=200,yMin=0,yMax=1.5)
-
-        # Define the voltage curve to be plotted
-        self.voltageCurve = self.mainPlotWindow.plot()
-        self.voltageCurve.setPen('b',width=2)
 
         # Define a maximum voltage reached line
         self.maxVoltsLine = pg.InfiniteLine(angle=0)
         self.maxVoltsLine.setPen(color="FFA500", width=2)
         self.mainPlotWindow.addItem(self.maxVoltsLine)
 
+        # Define the voltage curve to be plotted
+        self.voltageCurve = self.mainPlotWindow.plot()
+        self.voltageCurve.setPen('b',width=2)
+
         # Print to status bar
-        self.statusbar.showMessage('Ready')
+        self.statusbar.showMessage('Ready to go!')
 
         # Define action  for when start recording is clicked
         self.startPlotting.clicked.connect(self.InitializeRun)
@@ -83,7 +85,7 @@ class PlottingApp(QtGui.QMainWindow, PlotDataGUI.Ui_MainWindow):
         self.updateTimer.timeout.connect(self.UpdatePlot)
 
         # Update the max voltage 
-        self.maxVoltsOut.insert("0.00")
+        self.maxVoltsOut.insert("%0.3f" % self.currentMaxVolts)
         
         # Define an message box to open when about/information in menu bar is selected
         self.actionAbout.triggered.connect(self.AboutMessage)
@@ -166,10 +168,10 @@ class PlottingApp(QtGui.QMainWindow, PlotDataGUI.Ui_MainWindow):
 
             # Reset dialog box and plot
             self.maxVoltsOut.clear()
-            self.maxVoltsOut.insert(str(self.currentMaxVolts))
+            self.maxVoltsOut.insert("%0.3f" % self.currentMaxVolts)
             self.maxVoltsLine.setValue(self.currentMaxVolts)
             self.voltageCurve.setData(self.dataArray)
-            self.statusbar.showMessage("Ready for data")
+            self.statusbar.showMessage("Ready for go!")
 
             self.arduinoInput.close()
         else:
@@ -184,18 +186,31 @@ class PlottingApp(QtGui.QMainWindow, PlotDataGUI.Ui_MainWindow):
             dataIn = self.arduinoInput.readline()
             # Decode the byte
             dataIn = float(dataIn[0:len(dataIn)-2].decode("utf-8"))
-            # append new data to existing data array
-            self.dataArray = np.append(self.dataArray,dataIn)
+
+            # If the number of data points is less than the size of the screen,
+            # accumulate data
+            if self.iTicker < self.stationaryBeforeScroll:
+                # append new data to existing data array
+                self.dataArray = np.append(self.dataArray,dataIn)
+
+                self.iTicker += 1
+            # Start scrolling data otherwise.
+            else:
+                # slice data array such that all data is rolled back one index
+                self.dataArray[:-1] = self.dataArray[1:]
+                # Overwrite last value in array
+                self.dataArray[-1] = dataIn
+
+            # Print the current input to the status bar
+            self.statusbar.showMessage("Running: V = %0.3f V" % dataIn)
             # Update the data in the curve related to motor voltage
             self.voltageCurve.setData(self.dataArray)
-            # Print the current input to the status bar
-            self.statusbar.showMessage(str(dataIn))
 
             # if new voltage is large than maximum voltage, replace max
             if dataIn > self.currentMaxVolts:
                 self.currentMaxVolts = dataIn
                 self.maxVoltsOut.clear()
-                self.maxVoltsOut.insert(str(self.currentMaxVolts))
+                self.maxVoltsOut.insert("%0.3f" % self.currentMaxVolts)
                 self.maxVoltsLine.setValue(self.currentMaxVolts)
                     
         else:
