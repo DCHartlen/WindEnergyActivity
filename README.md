@@ -1,8 +1,8 @@
 # Small-Scale Wind Energy Activity
 
-## Overview
-
 ![Turbine CAD Rendering](/ReadmeImages/WindTurbineMockup.png)
+
+## Overview
 
 This activity was developed to introduce students to wind energy and blade design. In terms of hardware, this project consists of a wind turbine upright and hub. The hub has a 1/4" drive shaft to allow students to fasten their blade and hub assemblies. Assemblies are held in place by tightening a wingnut against them. The driveshaft leads to a pulley drive which provides a 4:1 speed increase going into a DC motor. When spun, the DC motor creates a voltage. This voltage is not expected to be more than 1.5 V.
 
