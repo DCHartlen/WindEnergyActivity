@@ -24,7 +24,7 @@ This source code does only three things.
 3) Print the voltage to the LCD screen. Only done at 5 Hz to reduce flicker
 
 ### Plotting Source Code
-A graphical user interface (GUI) was created to plot the data and allow an operator some level of interactivity. This system is based on python 3.6. This GUI requires the following packages to operate:
+A graphical user interface (GUI) was created to plot the data and allow an operator some level of interactivity. A compiled version of this package is given [here](https://github.com/DCHartlen/WindEnergyProject/releases). This version does not require python to be installed on a user's computer. However, if you would like to alter the code, this program is based on python 3.6 and requires the following packages to operate:
 
 * PyQt 5: Powers the GUI
 * PyQtGraph: Used for plotting
