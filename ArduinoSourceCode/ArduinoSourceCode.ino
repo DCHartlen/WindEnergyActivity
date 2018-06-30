@@ -11,14 +11,14 @@
  *  Date:          
 */
 
-// include the library code:
+// Include libraries
 #include "Wire.h"
 #include "Adafruit_LiquidCrystal.h"
 
 // Initalize LCD screen through I2C, Address #0
 Adafruit_LiquidCrystal lcd(0);
 
-// Generator voltage pin
+// Generator voltage pin (Analog 5)
 const int pinGenerator = A5;
 
 // Define refresh frequencies. Units of hertz (1/s)
@@ -56,7 +56,7 @@ void setup() {
   // Delay for suspense
   delay(3000);
 
-  // Set  row of LCD to display "VOLTAGE"
+  // Set first row of LCD to display "VOLTAGE"
   lcd.clear();
   lcd.setCursor(4,0);
   lcd.print("VOLTAGE:");
@@ -65,14 +65,13 @@ void setup() {
 
 // put your main code here, to run repeatedly:
 void loop() {
-  currentMillis = millis();
+  currentMillis = millis(); // retreive current millis
   
   // Check interrupt for sampling and send over serial. 
   if ((currentMillis - lastSampleMillis) > samplingFreq) {
     // Read voltage (bits) from analog pin
     vNew = analogRead(pinGenerator);
-    // Two things here. 1) running first order low pass filter on raw 
-    // input (in bits), 2) converting bits to volts.
+    // Converting bits to volts.
     vAct = vNew*b2v;
     //Saving old voltage for next iteration (in bits)
     vOld = vNew;

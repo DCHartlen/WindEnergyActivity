@@ -14,7 +14,7 @@ The microcontroller is required to be plugged into a computer to operate. Voltag
 
 All source code, 3D STL models for printing, and guide images are provided in this main branch of the repository. 
 
-For a single-file executable for the acquisition package which does not require downloading any dependancies, please see the [release section]https://github.com/DCHartlen/WindEnergyActivity/releases) of this repository.
+For a single-file executable for the acquisition package which does not require downloading any dependancies, please see the [release section](https://github.com/DCHartlen/WindEnergyActivity/releases) of this repository.
 
 For instructions on how build a turbine (including a suggested parts list), descripton of the microcontroller source code, and instruction on how to use the data Acquisiton package, please refer to [the project's wiki](https://github.com/DCHartlen/WindEnergyActivity/wiki).
 

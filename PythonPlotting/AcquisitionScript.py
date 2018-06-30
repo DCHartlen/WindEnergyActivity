@@ -1,6 +1,8 @@
 # -*- coding: utf-8 -*-
 """
-Python script which handles how the GUI window behaves
+Python script which handles GUI interaction, data acquisition, filtering
+and processing. Generally compiled to a single executable for simpler
+distrubution. 
 
     Created By:   D.C. Hartlen, EIT
     Created On:   16-JUN-2018
@@ -55,7 +57,8 @@ class PlottingApp(QtGui.QMainWindow, PlotDataGUI.Ui_MainWindow):
 
         # Define information about the plot window specifically
         self.mainPlotWindow.plotItem.showGrid(True, True, 0.7)
-        self.mainPlotWindow.setRange(xRange=[0, self.stationaryBeforeScroll], yRange=[0,1.5])  
+        self.mainPlotWindow.setRange(xRange=[0, self.stationaryBeforeScroll], yRange=[0,0.8]) 
+        self.mainPlotWindow.autoRange() 
         self.mainPlotWindow.setLabels(left = 'Voltage (V)',bottom = 'Time')
 
         # Define a maximum voltage reached line

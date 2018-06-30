@@ -1,4 +1,11 @@
-# -*- coding: utf-8 -*-
+"""
+Contains all objects in the GUI (buttons, plots, etc). Generated using ui_convert.py
+from "PlotDataGUI.ui"
+    Created By:   D.C. Hartlen, EIT
+    Created On:   16-JUN-2018
+    Modified By:  
+    Modified On: 
+"""
 
 # Form implementation generated from reading ui file 'PlotDataGUI.ui'
 #
