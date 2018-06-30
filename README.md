@@ -1,6 +1,6 @@
 # Small-Scale Wind Energy Activity
 
-![Turbine CAD Rendering](/ImagesforReadmeWiki/WindTurbineRender.png)
+![Turbine CAD Rendering](https://github.com/DCHartlen/WindEnergyActivity/blob/master/ImagesforReadmeWiki/WindTurbineRender.PNG)
 
 ## Overview
 
