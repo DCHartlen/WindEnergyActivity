@@ -58,7 +58,6 @@ class PlottingApp(QtGui.QMainWindow, PlotDataGUI.Ui_MainWindow):
         # Define information about the plot window specifically
         self.mainPlotWindow.plotItem.showGrid(True, True, 0.7)
         self.mainPlotWindow.setRange(xRange=[0, self.stationaryBeforeScroll], yRange=[0,0.8]) 
-        self.mainPlotWindow.autoRange() 
         self.mainPlotWindow.setLabels(left = 'Voltage (V)',bottom = 'Time')
 
         # Define a maximum voltage reached line
